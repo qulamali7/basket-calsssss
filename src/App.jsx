@@ -2,30 +2,12 @@ import "./index.scss";
 import { useState, useEffect } from "react";
 function App() {
   const [data, setData] = useState([]);
-  const [basket, setBasket] = useState([]);
-  const [count, setCount] = useState(0);
+  const [basket, setBasket] = useState(localStorage.getItem("basket") ? JSON.parse(localStorage.getItem("basket")) : []);
   useEffect(() => {
-    GetAdminFetch();
-  }, []);
+    localStorage.setItem("basket", JSON.stringify(basket))
+  }, [basket])
 
-  function AddBasket(item) {
-    const elementIndex=basket.findIndex((x)=>x.id===item.id)
-    if (elementIndex!==-1) {
-      const newbasket=[...basket]
-      
-    }
-    if (condition) {
-      
-    }
-    
-    setBasket([...basket, item]);
-  }
-  function RemoveBasket(item) {
-    setBasket([...basket, item]);
-  }
-  console.log(basket);
-
-  async function GetAdminFetch() {
+  async function GetFetch() {
     try {
       const res = await fetch("https://northwind.vercel.app/api/products");
       const data = await res.json();
@@ -34,37 +16,66 @@ function App() {
       console.log(error.message);
     }
   }
+  useEffect(() => {
+    GetFetch();
+  }, []);
+
+
+  function AddBasket(item) {
+    const elementIndex = basket.findIndex((x) => x.id === item.id)
+    if (elementIndex !== -1) {
+      const newBasket = [...basket]
+      newBasket[elementIndex].count++
+      setBasket(newBasket)
+    }
+    else {
+      setBasket([...basket, { ...item, count: 1 }]);
+    }
+  }
+  function RemoveBasket(id) {
+    setBasket(basket.filter((x) => x.id !== id));
+  }
+  function setCountValue(isCount, item) {
+    const elementIndex = basket.findIndex((x) => x.id === item.id)
+    const newBasket = [...basket]
+    if (isCount) {
+      newBasket[elementIndex].count++
+      setBasket(newBasket)
+    }
+    else {
+      if (newBasket[elementIndex].count > 0) {
+        newBasket[elementIndex].count--
+        setBasket(newBasket)
+      }
+    }
+  }
   return (
-    <div className="App">
-      <h1>Umumi hisse</h1>
-      <div>
-        <h3>Basket</h3>
-        <div style={{ border: "1px solid black" }}>
-          {basket.map((x) => (
-            <ul>
-              <li>{x.id}</li>
-              <li>{x.name}</li>
-              <li>
-                sayi {count}{" "}
-                <button onClick={() => setCount(count + 1)}>+</button>
-                <button onClick={() => setCount(count - 1)}>-</button>
-              </li>
-              <button onClick={RemoveBasket}>Remove</button>
-            </ul>
-          ))}
-          
-        </div>
-      </div>
-      <div>
-        {data.map((x) => (
-          <ul>
+    <>
+      <h1 className="title">React Basket</h1>
+      <h2 className="title">Baskets</h2>
+      <div className="basket-cards cards" >
+        {basket.map((x) => (
+          <ul className="basket-card card">
             <li>{x.id}</li>
             <li>{x.name}</li>
-            <button onClick={() => AddBasket(x)}>Add Basket</button>
+            <li>Count:{x.count}</li>
+            <button className="btn" onClick={() => setCountValue(true, x)}>+</button>
+            <button className="btn" onClick={() => setCountValue(false, x)}>-</button>
+            <button className="btn" onClick={() => RemoveBasket(x.id)}>Remove</button>
           </ul>
         ))}
       </div>
-    </div>
+      <h2 className="title">Products</h2>
+      <div className="product-cards cards" >
+        {data.map((x) => (
+          <ul className="product-card card">
+            <li>{x.id}</li>
+            <li>{x.name}</li>
+            <button className="btn" onClick={() => AddBasket(x)}>Add Basket</button>
+          </ul>
+        ))}
+      </div>
+    </>
   );
 }
 
